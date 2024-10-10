@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Dízimos e Ofertas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Controle de Dízimos e Ofertas</h1>
+
+        <div class="input-section">
+            <label for="tipo">Tipo:</label>
+            <select id="tipo">
+                <option value="dizimo">Dízimo</option>
+                <option value="oferta">Oferta</option>
+            </select>
+
+            <label for="valor">Valor (R$):</label>
+            <input type="number" id="valor" step="0.01" placeholder="Digite o valor">
+
+            <label for="dataEntrada">Data de Entrada:</label>
+            <input type="date" id="dataEntrada">
+
+            <button onclick="adicionarEntrada()">Adicionar Entrada</button>
+        </div>
+
+        <div class="output-section">
+            <label for="valorSaida">Valor Saída (R$):</label>
+            <input type="number" id="valorSaida" step="0.01" placeholder="Digite o valor da saída">
+
+            <label for="dataSaida">Data de Saída:</label>
+            <input type="date" id="dataSaida">
+
+            <button onclick="adicionarSaida()">Adicionar Saída</button>
+        </div>
+
+        <div class="summary">
+            <h2>Relatório</h2>
+            <ul id="relatorioEntradas"></ul>
+            <ul id="relatorioSaidas"></ul>
+        </div>
+
+        <div class="totals">
+            <p>Total de Dízimos: R$ <span id="totalDizimos">0.00</span></p>
+            <p>Total de Ofertas: R$ <span id="totalOfertas">0.00</span></p>
+            <p>Total de Saídas: R$ <span id="totalSaidas">0.00</span></p>
+            <p>Saldo Total: R$ <span id="saldoTotal">0.00</span></p>
+        </div>
+
+        <button onclick="gerarRelatorio()">Gerar Relatório</button>
+        <button onclick="baixarRelatorio()">Baixar Relatório</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
