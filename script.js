@@ -67,32 +67,108 @@ function atualizarTotais() {
     document.getElementById("saldoTotal").textContent = saldoTotal.toFixed(2);
 }
 
-function gerarRelatorio() {
-    let relatorio = "Relatório de Dízimos e Ofertas:\n\n";
+function baixarRelatorio() {
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
 
-    relatorio += "Entradas:\n";
+    // Adicionar título ao relatório
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Informe de Rendimentos", 14, 20);
+
+    // Adicionar data de geração do relatório
+    doc.setFontSize(10);
+    const dataAtual = new Date().toLocaleDateString("pt-BR");
+    doc.text(`Gerado em: ${dataAtual}`, 14, 28);
+
+    // Criar arrays separados para Dízimos, Ofertas e Saídas
+    let dizimos = [];
+    let ofertas = [];
+    let saidas = [];
+
+    // Separar os valores corretamente
     relatorioEntradas.forEach(item => {
-        relatorio += item + "\n";
+        const dadosFormatados = extrairDadosRelatorio(item);
+        if (dadosFormatados.tipo === "dizimo") {
+            dizimos.push(["Dízimo", parseFloat(dadosFormatados.valor).toFixed(2), formatarData(dadosFormatados.data)]);
+        } else if (dadosFormatados.tipo === "oferta") {
+            ofertas.push(["Oferta", parseFloat(dadosFormatados.valor).toFixed(2), formatarData(dadosFormatados.data)]);
+        }
     });
 
-    relatorio += "\nSaídas:\n";
+    // Adicionar saídas com categorias
     relatorioSaidas.forEach(item => {
-        relatorio += item + "\n";
+        const dadosFormatados = extrairDadosRelatorio(item, true);
+        saidas.push([dadosFormatados.tipo, parseFloat(dadosFormatados.valor).toFixed(2), formatarData(dadosFormatados.data)]);
     });
 
-    relatorio += `\nTotal de Dízimos: R$ ${totalDizimos.toFixed(2)}\n`;
-    relatorio += `Total de Ofertas: R$ ${totalOfertas.toFixed(2)}\n`;
-    relatorio += `Total de Saídas: R$ ${totalSaidas.toFixed(2)}\n`;
-    relatorio += `Saldo Total: R$ ${(totalDizimos + totalOfertas - totalSaidas).toFixed(2)}\n`;
+    // Função para adicionar tabelas ao PDF
+    function adicionarTabela(titulo, dados, startY) {
+        if (dados.length > 0) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text(titulo, 14, startY);
+            doc.autoTable({
+                startY: startY + 5,
+                head: [["Tipo de Rendimento", "Valor Bruto (R$)", "Data do Pagamento"]],
+                body: dados,
+                theme: "grid",
+                styles: { fontSize: 10 },
+                headStyles: { fillColor: [64, 64, 64], textColor: [255, 255, 255] },
+                columnStyles: {
+                    0: { cellWidth: 50 },
+                    1: { cellWidth: 40, halign: "right" },
+                    2: { cellWidth: 40, halign: "center" }
+                }
+            });
+            return doc.lastAutoTable.finalY + 10; // Retorna a posição Y abaixo da tabela para a próxima seção
+        }
+        return startY;
+    }
 
-    return relatorio;
+    // Gerar as tabelas no PDF
+    let y = 35;
+    y = adicionarTabela("Dízimos", dizimos, y);
+    y = adicionarTabela("Ofertas", ofertas, y);
+    y = adicionarTabela("Saídas", saidas, y);
+
+    // Adicionar saldo total
+    let saldoTotal = totalDizimos + totalOfertas - totalSaidas;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(`Saldo Total: R$ ${saldoTotal.toFixed(2)}`, 14, y + 10);
+
+    // Salvar e baixar o PDF
+    doc.save("Informe_Rendimentos_2024.pdf");
 }
 
-function baixarRelatorio() {
-    const relatorio = gerarRelatorio();
-    const blob = new Blob([relatorio], { type: "text/plain" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "relatorio_dizimos_ofertas.txt";
-    link.click();
+function adicionarSaida() {
+    const valorSaida = parseFloat(document.getElementById("valorSaida").value);
+    const dataSaida = document.getElementById("dataSaida").value;
+    const categoria = document.getElementById("categoriaSaida").value;
+
+    if (!valorSaida || !dataSaida) {
+        alert("Preencha todos os campos de saída!");
+        return;
+    }
+
+    totalSaidas += valorSaida;
+    relatorioSaidas.push(`${categoria} - Valor: R$ ${valorSaida.toFixed(2)} - Data: ${dataSaida}`);
+    atualizarTotais();
+}
+
+// Função auxiliar para extrair os dados corretamente
+function extrairDadosRelatorio(texto, isSaida = false) {
+    const partes = texto.split(" - ");
+    return {
+        tipo: isSaida ? partes[0] : partes[0].split(": ")[1],
+        valor: partes[1].split(": ")[1].replace("R$ ", "").replace(",", "."),
+        data: partes[2].split(": ")[1]
+    };
+}
+
+// Função para formatar a data no padrão DD/MM/AAAA
+function formatarData(dataISO) {
+    const [ano, mes, dia] = dataISO.split("-");
+    return `${dia}/${mes}/${ano}`;
 }
